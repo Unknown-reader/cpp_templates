@@ -1,12 +1,16 @@
 CXX      = g++
 CXXFLAGS = -std=c++20 -Wall -Wextra -Wpedantic -Werror -g
 
-all: demo
+BUILD := build
+SRC   := demo.cpp
 
-demo: demo.cpp
+all: $(BUILD)/demo
+
+$(BUILD)/demo: demo.cpp
+	mkdir -p $(BUILD)
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
-	rm -rf demo
+	rm -rf $(BUILD)
 
-.PHONY: all demo clean
+.PHONY: all clean
