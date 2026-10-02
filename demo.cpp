@@ -19,6 +19,14 @@ constexpr std::string_view to_string(Status s) {
     return "?";
 }
 
+struct FastTimeout { static int ms() { return 100;  } };
+struct SlowTimeout { static int ms() { return 5000; } };
+
+template <typename Policy>
+struct Client {
+    void call() { std::cout << "timeout=" << Policy::ms() << "ms\n"; }
+};
+
 int main()
 {
     std::cout << max(1, 23) << "\n";
@@ -26,4 +34,7 @@ int main()
     std::cout << max('a', 'z') << "\n";
 
     std::cout << to_string(Status::NotFound) << "\n"; // NotFound
+
+    Client<FastTimeout>{}.call(); // 100ms
+    Client<SlowTimeout>{}.call(); // 5000ms
 }
