@@ -2,7 +2,9 @@
 #include <string_view>
 
 template <typename T>
-T max(T a, T b) { return a > b ? a : b; }
+constexpr const T& max(const T& a, const T& b) { return a > b ? a : b; }
+
+static_assert(max(1, 23) == 23);
 
 template <typename E>
 constexpr std::string_view to_string(E e);   // объявление
