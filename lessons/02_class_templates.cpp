@@ -1,74 +1,104 @@
-// Урок 2. Шаблоны классов.
+// Урок 2. Шаблоны классов в бэкенде.
 //
-// Класс-шаблон параметризуется типом. Методы можно определять внутри класса,
-// а внутри шаблонного класса можно объявлять свои шаблонные методы.
+// Хендлеру нужно вернуть либо данные, либо ошибку. Обёртка Result<T, E> хранит
+// оба варианта в одном типе, а Cache<K, V> и Repository<Entity> параметризуются
+// типами ключа и сущности — один код на все сущности сервиса.
 
 #include <iostream>
-#include <stdexcept>
+#include <map>
+#include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
-#include <vector>
+
+#include "backend.hpp"
 
 namespace {
 
-template <typename T>
-class Box {
+// Результат операции: значение или ошибка. Упрощённый std::expected.
+template <typename T, typename E>
+class Result {
 public:
-    explicit Box(T value) : value_(std::move(value)) {}
+    using value_type = T;
+    using error_type = E;
 
-    const T& get() const { return value_; }
-    void set(T value) { value_ = std::move(value); }
+    static Result ok(T value) { return Result{std::move(value)}; }
+    static Result fail(E error) { return Result{std::move(error)}; }
 
-    // Шаблонный метод: принимает произвольный функтор и меняет тип содержимого.
-    template <typename F>
-    auto map(F f) const {
-        return Box<decltype(f(value_))>(f(value_));
-    }
+    bool has_value() const { return value_.has_value(); }
+    explicit operator bool() const { return has_value(); }
 
-    // Сравнение с Box любого другого типа.
-    template <typename U>
-    bool operator==(const Box<U>& other) const {
-        return value_ == other.get();
-    }
+    const T& value() const { return *value_; }
+    const E& error() const { return error_; }
 
 private:
-    T value_;
+    explicit Result(T value) : value_(std::move(value)) {}
+    explicit Result(E error) : error_(std::move(error)) {}
+
+    std::optional<T> value_;
+    E error_{};
 };
 
-// Классический пример шаблона класса — контейнер с хранением внутри.
-template <typename T>
-class Stack {
+// Кэш: и ключ, и значение — любые типы. Здесь ключ — id пользователя.
+template <typename K, typename V>
+class Cache {
 public:
-    void push(T value) { data_.push_back(std::move(value)); }
+    void put(const K& key, V value) { data_[key] = std::move(value); }
 
-    T pop() {
-        if (data_.empty()) throw std::out_of_range("Stack<>::pop: пусто");
-        T value = std::move(data_.back());
-        data_.pop_back();
-        return value;
+    const V* get(const K& key) const {
+        auto it = data_.find(key);
+        return it == data_.end() ? nullptr : &it->second;
     }
 
-    bool empty() const { return data_.empty(); }
+    void invalidate(const K& key) { data_.erase(key); }
+    std::size_t size() const { return data_.size(); }
 
 private:
-    std::vector<T> data_;
+    std::map<K, V> data_;
+};
+
+// Репозиторий поверх кэша: тип сущности — параметр шаблона.
+template <typename Entity, typename Id>
+class Repository {
+public:
+    explicit Repository(Cache<Id, Entity>& cache) : cache_(cache) {}
+
+    void save(const Id& id, Entity entity) { cache_.put(id, std::move(entity)); }
+
+    std::optional<Entity> find(const Id& id) const {
+        if (const Entity* entity = cache_.get(id)) return *entity;
+        return std::nullopt;
+    }
+
+private:
+    Cache<Id, Entity>& cache_;
 };
 
 void run() {
-    Box<int> a{42};
-    std::cout << "Box<int>: " << a.get() << '\n';
+    using backend::DbError;
+    using backend::User;
 
-    // map меняет параметр шаблона: Box<int> -> Box<std::string>.
-    auto b = a.map([](int v) { return std::to_string(v) + "!"; });
-    std::cout << "после map: " << b.get() << '\n';
+    Cache<int, User> users;
+    Repository<User, int> repository{users};
+    repository.save(1, User{1, "Алиса", "alice@example.com"});
 
-    Box<int> same{42};
-    std::cout << std::boolalpha << "a == same: " << (a == same) << '\n';
+    if (auto user = repository.find(1)) {
+        std::cout << "найден: " << user->name << " <" << user->email << ">\n";
+    }
 
-    Stack<std::string> stack;
-    stack.push("первый");
-    stack.push("второй");
-    while (!stack.empty()) std::cout << "pop: " << stack.pop() << '\n';
+    std::cout << std::boolalpha
+              << "find(42) есть значение: " << repository.find(42).has_value()
+              << ", в кэше: " << users.size() << " записи\n";
+
+    // Один и тот же Result работает с данными и с ошибкой БД.
+    auto ok = Result<User, DbError>::ok(User{2, "Боб", "bob@example.com"});
+    auto fail = Result<User, DbError>::fail(DbError{"нет соединения с БД"});
+
+    std::cout << "ok: " << ok.has_value()
+              << ", fail: " << fail.has_value()
+              << ", причина: " << fail.error().message << '\n';
+
+    static_assert(std::is_same_v<decltype(ok)::value_type, User>);
 }
 
 }  // namespace

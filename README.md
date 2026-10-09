@@ -34,7 +34,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | #  | Урок | Применение в бэкенде | Статус |
 |----|------|----------------------|--------|
 | 01 | [Шаблоны функций](lessons/01_function_templates.cpp) | пагинация, метрики, сборка ответа | ✅ |
-| 02 | [Шаблоны классов](lessons/02_class_templates.cpp) | `Result<T, E>`, кэш, репозиторий | ⬜ |
+| 02 | [Шаблоны классов](lessons/02_class_templates.cpp) | `Result<T, E>`, кэш, репозиторий | ✅ |
 | 03 | [Полная специализация](lessons/03_full_specialization.cpp) | JSON-сериализация и имя HTTP-статуса | ⬜ |
 | 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | JSON для списков и необязательных полей | ⬜ |
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | кольцевой буфер метрик, буфер чтения | ⬜ |
@@ -58,5 +58,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
   универсальной ссылке.
 
 Ключевая мысль: шаблон сам по себе не существует, пока его не инстанцируют.
+
+## Урок 2. Шаблоны классов
+
+Класс-шаблон параметризуется типом и создаёт отдельный тип под каждый аргумент.
+
+- `Result<T, E>` — либо значение, либо ошибка (упрощённый `std::expected`),
+  фабрики `ok`/`fail` и псевдонимы `value_type`/`error_type`.
+- `Cache<K, V>` — кэш пользователей по id, любые ключ и значение.
+- `Repository<Entity, Id>` — репозиторий поверх кэша, один на все сущности.
+
+Ключевая мысль: `Cache<int, User>`, `Cache<int, Order>` и `Result<User, DbError>`
+— разные, независимые типы, порождённые одним шаблоном.
 
 <!-- lesson-sections -->
