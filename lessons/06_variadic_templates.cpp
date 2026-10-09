@@ -1,56 +1,71 @@
-// Урок 6. Вариадические шаблоны и fold-выражения.
+// Урок 6. Вариадические шаблоны в бэкенде.
 //
-// Пакет параметров (typename... Args) принимает любое число аргументов.
-// Раскрывать пакет можно рекурсией, а с C++17 — коротко через fold-выражения.
+// Логгер принимает любое число полей, а сборщик ответа — любое число заголовков.
+// Пакет параметров избавляет от ручных перегрузок под 1, 2, 3, ... аргумента.
 
-#include <cstddef>
 #include <iostream>
+#include <sstream>
 #include <string>
-#include <type_traits>
+#include <utility>
+
+#include "backend.hpp"
 
 namespace {
 
-// База рекурсии: аргументов больше не осталось.
-void print() { std::cout << '\n'; }
-
-// Рекурсивно печатаем первый аргумент, остальные передаём дальше.
-template <typename First, typename... Rest>
-void print(const First& first, const Rest&... rest) {
-    std::cout << first;
-    if constexpr (sizeof...(rest) > 0) std::cout << ", ";
-    print(rest...);
+// Склеиваем любое число полей в строку через разделитель (fold-выражение).
+template <typename... Fields>
+std::string join(const std::string& separator, Fields&&... fields) {
+    std::ostringstream out;
+    bool first = true;
+    auto append = [&](const auto& field) {
+        if (!first) out << separator;
+        first = false;
+        out << field;
+    };
+    (append(std::forward<Fields>(fields)), ...);
+    return out.str();
 }
 
-// Fold-выражение: (args + ... + 0) разворачивается в a1 + (a2 + (... + 0)).
-template <typename... Args>
-auto sum(Args... args) {
-    return (args + ... + 0);
+// Структурный лог: уровень + произвольные поля.
+template <typename... Fields>
+void log_line(const std::string& level, Fields&&... fields) {
+    std::cout << "[" << level << "] "
+              << join(" ", std::forward<Fields>(fields)...) << '\n';
 }
 
-// Проверка, что все типы совпадают с первым.
-template <typename T, typename... Rest>
-bool all_same(const T&, const Rest&...) {
-    return (std::is_same_v<T, Rest> && ...);
+// Добавить любое число заголовков в ответ: каждый аргумент — пара key/value.
+template <typename... Headers>
+void set_headers(backend::Response& response, Headers&&... headers) {
+    (response.headers.emplace(std::forward<Headers>(headers).first,
+                              std::forward<Headers>(headers).second),
+     ...);
 }
 
-// sizeof... возвращает число элементов в пакете.
-template <typename... Args>
-constexpr std::size_t count() {
-    return sizeof...(Args);
+// Собрать ответ из статуса и произвольного набора заголовков.
+template <typename... Headers>
+backend::Response make_response(backend::HttpStatus status, Headers&&... headers) {
+    backend::Response response;
+    response.status = status;
+    set_headers(response, std::forward<Headers>(headers)...);
+    return response;
 }
 
 void run() {
-    print(1, 2.5, "три", std::string{"четыре"}, '5');
+    using backend::HttpStatus;
 
-    std::cout << "sum(1,2,3,4,5) = " << sum(1, 2, 3, 4, 5) << '\n';
-    std::cout << "sum()          = " << sum() << '\n';
+    log_line("INFO", "user", 42, "created");
+    log_line("WARN", "cache miss", "key=profile:42");
+    std::cout << "join: " << join(", ", 1, 2.5, "three") << '\n';
 
-    std::cout << std::boolalpha;
-    std::cout << "all_same(1,2,3) = " << all_same(1, 2, 3) << '\n';
-    std::cout << "all_same(1,2.0) = " << all_same(1, 2.0) << '\n';
+    const backend::Response response =
+        make_response(HttpStatus::Created,
+                      std::pair{"Content-Type", "application/json"},
+                      std::pair{"X-Request-Id", "abc123"});
 
-    std::cout << "count<int,double,char>() = "
-              << count<int, double, char>() << '\n';
+    std::cout << "response headers:\n";
+    for (const auto& [key, value] : response.headers) {
+        std::cout << "  " << key << ": " << value << '\n';
+    }
 }
 
 }  // namespace

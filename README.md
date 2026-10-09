@@ -38,7 +38,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 03 | [Полная специализация](lessons/03_full_specialization.cpp) | JSON-сериализация и имя HTTP-статуса | ✅ |
 | 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | JSON для списков и необязательных полей | ✅ |
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | кольцевой буфер метрик, буфер чтения | ✅ |
-| 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | структурные логи и заголовки ответа | ⬜ |
+| 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | структурные логи и заголовки ответа | ✅ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | репозиторий поверх разных контейнеров | ⬜ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | сериализация только подходящих типов | ⬜ |
 | 09 | [Концепты](lessons/09_concepts.cpp) | требования к сущностям и репозиториям | ⬜ |
@@ -106,5 +106,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: значение-параметр — часть типа, поэтому `RingBuffer<double, 4>` и
 `RingBuffer<double, 8>` несовместимы.
+
+## Урок 6. Вариадические шаблоны
+
+Пакет параметров `typename... Fields` принимает любое число аргументов.
+
+- `join(separator, fields...)` — склейка полей через fold-выражение и лямбду.
+- `log_line(level, fields...)` — структурный лог из произвольного числа полей.
+- `set_headers(response, headers...)` — добавление любого числа заголовков.
+- `make_response(status, headers...)` — сборка HTTP-ответа.
+
+Ключевая мысль: один вариадический шаблон заменяет семейство перегрузок под
+разное число аргументов.
 
 <!-- lesson-sections -->
