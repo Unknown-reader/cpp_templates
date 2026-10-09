@@ -1,60 +1,95 @@
-// Урок 9. Концепты (C++20).
+// Урок 9. Концепты в бэкенде.
 //
-// Концепт — именованное требование к типу. Он даёт понятные ошибки компиляции
-// и позволяет ограничивать параметры шаблона прямо в сигнатуре.
+// Концепты описывают требования к доменным типам словами: «сущность с id»,
+// «репозиторий с save/find», «сериализатор». Ошибка видна прямо в сигнатуре,
+// а не в глубине инстанциации.
 
 #include <concepts>
 #include <iostream>
+#include <optional>
 #include <string>
-#include <type_traits>
+#include <vector>
+
+#include "backend.hpp"
 
 namespace {
 
+// Сущность — тип с числовым полем id.
 template <typename T>
-concept Number = std::integral<T> || std::floating_point<T>;
-
-template <typename T>
-concept Addable = requires(T a, T b) {
-    { a + b } -> std::convertible_to<T>;
+concept Entity = requires(const T& entity) {
+    { entity.id } -> std::convertible_to<int>;
 };
 
+// Репозиторий — умеет сохранять и искать по id свою сущность.
 template <typename T>
-concept Printable = requires(std::ostream& os, const T& value) {
-    { os << value } -> std::same_as<std::ostream&>;
+concept Repository = requires(T repo, const typename T::entity_type& entity) {
+    { repo.save(entity) } -> std::same_as<void>;
+    { repo.find(entity.id) }
+        -> std::convertible_to<std::optional<typename T::entity_type>>;
 };
 
-struct NoAdd {};
+// Сериализатор — статический serialize для нужного типа.
+template <typename S, typename T>
+concept Serializer = requires(const T& value) {
+    { S::serialize(value) } -> std::convertible_to<std::string>;
+};
 
-template <Number T>
-T clamp(T value, T lo, T hi) {
-    if (value < lo) return lo;
-    if (value > hi) return hi;
-    return value;
+// Конкретный репозиторий и сериализатор из домена backend.
+class UserRepository {
+public:
+    using entity_type = backend::User;
+
+    void save(const backend::User& user) { data_.push_back(user); }
+
+    std::optional<backend::User> find(int id) const {
+        for (const auto& user : data_) {
+            if (user.id == id) return user;
+        }
+        return std::nullopt;
+    }
+
+private:
+    std::vector<backend::User> data_;
+};
+
+struct UserSerializer {
+    static std::string serialize(const backend::User& user) {
+        return "{\"id\":" + std::to_string(user.id) + "}";
+    }
+};
+
+// Обобщённые функции, ограниченные концептами.
+template <Entity T>
+std::string resource_name(const T& entity) {
+    return "resource/" + std::to_string(entity.id);
 }
 
-// Сокращённый синтаксис: Number auto вместо template <Number T>.
-Number auto half(Number auto value) { return value / 2; }
-
-template <Addable T>
-T twice(T value) { return value + value; }
-
-template <Printable T>
-void show(const T& value) { std::cout << "show: " << value << '\n'; }
+template <Repository Repo>
+void register_user(Repo& repo, const backend::User& user) {
+    repo.save(user);
+}
 
 void run() {
-    static_assert(Number<int>);
-    static_assert(Number<double>);
-    static_assert(!Number<std::string>);
-    static_assert(Addable<int>);
-    static_assert(!Addable<NoAdd>);
+    const backend::User alice{1, "Алиса", "alice@example.com"};
 
-    std::cout << "clamp(15, 0, 10)     = " << clamp(15, 0, 10) << '\n';
-    std::cout << "clamp(2.5, 0.0, 2.0) = " << clamp(2.5, 0.0, 2.0) << '\n';
-    std::cout << "twice(21)            = " << twice(21) << '\n';
-    std::cout << "half(10)             = " << half(10) << '\n';
+    std::cout << resource_name(alice) << '\n';
 
-    show(std::string{"концепты"});
-    show(42);
+    UserRepository repository;
+    register_user(repository, alice);
+    if (auto user = repository.find(1)) {
+        std::cout << "сохранён: " << user->name << '\n';
+    }
+
+    std::cout << std::boolalpha
+              << "Entity<User>:              " << Entity<backend::User> << '\n'
+              << "Repository<UserRepository>: " << Repository<UserRepository> << '\n'
+              << "Serializer<User>:           "
+              << Serializer<UserSerializer, backend::User> << '\n';
+
+    static_assert(Entity<backend::User>);
+    static_assert(Repository<UserRepository>);
+    static_assert(Serializer<UserSerializer, backend::User>);
+    static_assert(!Entity<std::string>);
 }
 
 }  // namespace

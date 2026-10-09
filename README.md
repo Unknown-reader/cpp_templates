@@ -41,7 +41,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | структурные логи и заголовки ответа | ✅ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | репозиторий поверх разных контейнеров | ✅ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | сериализация только подходящих типов | ✅ |
-| 09 | [Концепты](lessons/09_concepts.cpp) | требования к сущностям и репозиториям | ⬜ |
+| 09 | [Концепты](lessons/09_concepts.cpp) | требования к сущностям и репозиториям | ✅ |
 | 10 | [CRTP и метапрограммирование](lessons/10_crtp_and_metaprogramming.cpp) | REST-контроллер и клиент БД с политиками | ⬜ |
 
 ## Урок 1. Шаблоны функций
@@ -141,5 +141,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: SFINAE выбирает перегрузку, а `if constexpr` — ветку внутри
 одной функции.
+
+## Урок 9. Концепты
+
+Концепт — именованное требование к типу с понятными ошибками компиляции.
+
+- `Entity` — у типа есть числовое поле `id`.
+- `Repository` — есть `entity_type`, методы `save` и `find`.
+- `Serializer` — статический `serialize` нужного типа.
+- Ограниченные шаблоны: `template <Entity T>`, `template <Repository Repo>`.
+
+Ключевая мысль: концепты заменяют большую часть SFINAE-кода и делают сигнатуры
+читаемыми как документация.
 
 <!-- lesson-sections -->
