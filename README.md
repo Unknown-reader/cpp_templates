@@ -35,7 +35,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 |----|------|----------------------|--------|
 | 01 | [Шаблоны функций](lessons/01_function_templates.cpp) | пагинация, метрики, сборка ответа | ✅ |
 | 02 | [Шаблоны классов](lessons/02_class_templates.cpp) | `Result<T, E>`, кэш, репозиторий | ✅ |
-| 03 | [Полная специализация](lessons/03_full_specialization.cpp) | JSON-сериализация и имя HTTP-статуса | ⬜ |
+| 03 | [Полная специализация](lessons/03_full_specialization.cpp) | JSON-сериализация и имя HTTP-статуса | ✅ |
 | 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | JSON для списков и необязательных полей | ⬜ |
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | кольцевой буфер метрик, буфер чтения | ⬜ |
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | структурные логи и заголовки ответа | ⬜ |
@@ -70,5 +70,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: `Cache<int, User>`, `Cache<int, Order>` и `Result<User, DbError>`
 — разные, независимые типы, порождённые одним шаблоном.
+
+## Урок 3. Полная специализация
+
+Явная специализация задаёт отдельную реализацию для конкретного типа.
+
+- `JsonSerializer<T>` — общий шаблон без реализации; специализации для `int`,
+  `bool`, `std::string` и `backend::User` задают формат JSON.
+- `status_text<Status>()` — специализация функции для значений перечисления
+  `HttpStatus`, доступна в `static_assert`.
+
+Ключевая мысль: компилятор сначала ищет точную специализацию и лишь потом
+берёт общий шаблон.
 
 <!-- lesson-sections -->
