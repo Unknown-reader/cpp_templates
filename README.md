@@ -38,7 +38,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | значения в параметрах шаблона | ✅ |
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | пакеты параметров, fold-выражения | ✅ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | контейнер как параметр | ✅ |
-| 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | свойства типов, `if constexpr` | ⬜ |
+| 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | свойства типов, `if constexpr` | ✅ |
 | 09 | [Концепты](lessons/09_concepts.cpp) | требования к типам в C++20 | ⬜ |
 | 10 | [CRTP и метапрограммирование](lessons/10_crtp_and_metaprogramming.cpp) | статический полиморфизм, вычисления во время компиляции | ⬜ |
 
@@ -119,5 +119,17 @@ fold-выражения делают то же самое короче (C++17).
 
 Ключевая мысль: так пишут обобщённые алгоритмы и адаптеры, не привязанные к
 одному контейнеру.
+
+## Урок 8. Type traits, SFINAE и if constexpr
+
+Свойства типов проверяются на этапе компиляции.
+
+- `std::enable_if_t` оставляет перегрузку `describe` только для подходящего типа.
+- `if constexpr` выбирает ветку до инстанциации остальных.
+- `void_t` + `decltype(std::declval<T>().size())` — detection idiom для
+  `has_size`.
+
+Ключевая мысль: SFINAE выбирает перегрузку, а `if constexpr` — ветку внутри
+одной функции.
 
 <!-- lesson-sections -->
