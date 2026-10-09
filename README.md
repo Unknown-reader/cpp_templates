@@ -35,7 +35,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 02 | [Шаблоны классов](lessons/02_class_templates.cpp) | инстанциация, шаблонные методы | ✅ |
 | 03 | [Полная специализация](lessons/03_full_specialization.cpp) | особое поведение для типа | ✅ |
 | 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | специализация по форме типа | ✅ |
-| 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | значения в параметрах шаблона | ⬜ |
+| 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | значения в параметрах шаблона | ✅ |
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | пакеты параметров, fold-выражения | ⬜ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | контейнер как параметр | ⬜ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | свойства типов, `if constexpr` | ⬜ |
@@ -85,5 +85,16 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: частичных специализаций может быть много, и компилятор выбирает
 наиболее подходящую.
+
+## Урок 5. Нетиповые параметры
+
+Параметром шаблона может быть значение, известное на этапе компиляции.
+
+- `FixedArray<T, N>` — размер массива встроен в тип, динамической памяти нет.
+- `square<N>()` — результат доступен в `static_assert`.
+- `static constexpr size()` возвращает `N` как обычную константу.
+
+Ключевая мысль: значение-параметр — часть типа, поэтому `FixedArray<int, 3>` и
+`FixedArray<int, 5>` несовместимы.
 
 <!-- lesson-sections -->
