@@ -37,7 +37,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | специализация по форме типа | ✅ |
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | значения в параметрах шаблона | ✅ |
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | пакеты параметров, fold-выражения | ✅ |
-| 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | контейнер как параметр | ⬜ |
+| 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | контейнер как параметр | ✅ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | свойства типов, `if constexpr` | ⬜ |
 | 09 | [Концепты](lessons/09_concepts.cpp) | требования к типам в C++20 | ⬜ |
 | 10 | [CRTP и метапрограммирование](lessons/10_crtp_and_metaprogramming.cpp) | статический полиморфизм, вычисления во время компиляции | ⬜ |
@@ -108,5 +108,16 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: рекурсия — классический способ раскрытия пакета, а
 fold-выражения делают то же самое короче (C++17).
+
+## Урок 7. Параметры-шаблоны
+
+Параметром шаблона может быть сам контейнер-шаблон.
+
+- `make_filled<Container>(value, n)` — работает с `std::vector`, `std::deque`
+  и любым контейнером с `push_back`.
+- `dump<Container>(c)` — принимает `template <typename...> class`.
+
+Ключевая мысль: так пишут обобщённые алгоритмы и адаптеры, не привязанные к
+одному контейнеру.
 
 <!-- lesson-sections -->
