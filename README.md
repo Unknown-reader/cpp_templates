@@ -37,7 +37,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 02 | [Шаблоны классов](lessons/02_class_templates.cpp) | `Result<T, E>`, кэш, репозиторий | ✅ |
 | 03 | [Полная специализация](lessons/03_full_specialization.cpp) | JSON-сериализация и имя HTTP-статуса | ✅ |
 | 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | JSON для списков и необязательных полей | ✅ |
-| 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | кольцевой буфер метрик, буфер чтения | ⬜ |
+| 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | кольцевой буфер метрик, буфер чтения | ✅ |
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | структурные логи и заголовки ответа | ⬜ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | репозиторий поверх разных контейнеров | ⬜ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | сериализация только подходящих типов | ⬜ |
@@ -94,5 +94,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: частичных специализаций может быть много, и компилятор выбирает
 наиболее подходящую.
+
+## Урок 5. Нетиповые параметры
+
+Параметром шаблона может быть значение, известное на этапе компиляции.
+
+- `RingBuffer<T, N>` — окно последних `N` замеров времени без динамической
+  памяти, со средним значением и `static constexpr capacity()`.
+- `ReadBuffer<N>` — буфер чтения запроса; размер на стеке, переполнение
+  отсекается.
+
+Ключевая мысль: значение-параметр — часть типа, поэтому `RingBuffer<double, 4>` и
+`RingBuffer<double, 8>` несовместимы.
 
 <!-- lesson-sections -->
