@@ -1,16 +1,23 @@
-CXX      = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra -Wpedantic -Werror -g
+CXX      ?= g++
+CXXFLAGS ?= -std=c++20 -Wall -Wextra -Wpedantic -Werror -g
 
-BUILD := build
-SRC   := demo.cpp
+BUILD   := build
+LESSONS := $(wildcard lessons/*.cpp)
+BINS    := $(patsubst lessons/%.cpp,$(BUILD)/%,$(LESSONS))
 
-all: $(BUILD)/demo
+all: $(BINS)
 
-$(BUILD)/demo: demo.cpp
-	mkdir -p $(BUILD)
+$(BUILD)/%: lessons/%.cpp
+	@mkdir -p $(BUILD)
 	$(CXX) $(CXXFLAGS) $< -o $@
+
+run: all
+	@for bin in $(BINS); do \
+		echo "=== $$bin ==="; \
+		$$bin; \
+	done
 
 clean:
 	rm -rf $(BUILD)
 
-.PHONY: all clean
+.PHONY: all run clean
