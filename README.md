@@ -39,7 +39,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | пакеты параметров, fold-выражения | ✅ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | контейнер как параметр | ✅ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | свойства типов, `if constexpr` | ✅ |
-| 09 | [Концепты](lessons/09_concepts.cpp) | требования к типам в C++20 | ⬜ |
+| 09 | [Концепты](lessons/09_concepts.cpp) | требования к типам в C++20 | ✅ |
 | 10 | [CRTP и метапрограммирование](lessons/10_crtp_and_metaprogramming.cpp) | статический полиморфизм, вычисления во время компиляции | ⬜ |
 
 ## Урок 1. Шаблоны функций
@@ -131,5 +131,16 @@ fold-выражения делают то же самое короче (C++17).
 
 Ключевая мысль: SFINAE выбирает перегрузку, а `if constexpr` — ветку внутри
 одной функции.
+
+## Урок 9. Концепты
+
+Концепт — именованное требование к типу с понятными ошибками компиляции.
+
+- `Number`, `Addable`, `Printable` построены через `requires`.
+- `template <Number T>` и сокращённая запись `Number auto`.
+- Требования проверяются в `static_assert`.
+
+Ключевая мысль: концепты заменяют большую часть SFINAE-кода и делают сигнатуры
+читаемыми.
 
 <!-- lesson-sections -->
