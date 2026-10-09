@@ -1,67 +1,61 @@
-// Урок 8. Type traits, SFINAE и if constexpr.
+// Урок 8. Type traits и SFINAE в бэкенде.
 //
-// Type traits спрашивают у компилятора свойства типов. SFINAE позволяет
-// включать/выключать перегрузки по этим свойствам, а if constexpr — выбирать
-// ветку кода уже внутри одной функции.
+// Не всякую сущность можно отдать в JSON. Признак has_id отсекает неподходящие
+// типы ещё при компиляции, а if constexpr выбирает формат для разных категорий
+// значений внутри одной функции.
 
 #include <iostream>
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <vector>
+
+#include "backend.hpp"
 
 namespace {
 
-// Перегрузка существует только для целочисленных типов.
+// Detection idiom: есть ли у типа поле id?
+template <typename, typename = void>
+struct has_id : std::false_type {};
+
 template <typename T>
-std::enable_if_t<std::is_integral_v<T>, std::string> describe(T) {
-    return "целое число";
+struct has_id<T, std::void_t<decltype(std::declval<T>().id)>> : std::true_type {};
+
+// Перегрузка существует только для сущностей с полем id: иначе SFINAE уберёт её
+// из набора кандидатов, и компилятор сообщит об отсутствии подходящей функции.
+template <typename T>
+std::enable_if_t<has_id<T>::value, std::string> to_json(const T& entity) {
+    return "{\"id\":" + std::to_string(entity.id) + "}";
 }
 
-// А эта — только для чисел с плавающей точкой.
+// Формат скалярных значений выбирается ветками if constexpr.
 template <typename T>
-std::enable_if_t<std::is_floating_point_v<T>, std::string> describe(T) {
-    return "число с плавающей точкой";
-}
-
-// if constexpr отбрасывает невыбранные ветки до их инстанциации.
-template <typename T>
-std::string kind(const T& value) {
-    if constexpr (std::is_pointer_v<T>) {
-        return value ? "указатель на данные" : "нулевой указатель";
-    } else if constexpr (std::is_same_v<T, std::string>) {
-        return "строка длины " + std::to_string(value.size());
+std::string scalar_to_json(const T& value) {
+    if constexpr (std::is_same_v<T, std::string>) {
+        return "\"" + value + "\"";
+    } else if constexpr (std::is_same_v<T, bool>) {
+        return value ? "true" : "false";
+    } else if constexpr (std::is_arithmetic_v<T>) {
+        return std::to_string(value);
     } else {
-        return "значение";
+        return "null";
     }
 }
 
-// Detection idiom: есть ли у типа метод size()?
-template <typename, typename = void>
-struct has_size : std::false_type {};
-
-template <typename T>
-struct has_size<T, std::void_t<decltype(std::declval<T>().size())>>
-    : std::true_type {};
-
 void run() {
-    std::cout << describe(42) << '\n';
-    std::cout << describe(3.14) << '\n';
+    using backend::User;
 
-    int x = 0;
-    std::cout << kind(x) << '\n';
-    std::cout << kind(&x) << '\n';
-    std::cout << kind(static_cast<int*>(nullptr)) << '\n';
-    std::cout << kind(std::string{"hello"}) << '\n';
+    std::cout << "user:  " << to_json(User{1, "Алиса", "alice@example.com"}) << '\n';
 
-    std::cout << std::boolalpha;
-    std::cout << "has_size<std::vector<int>> = "
-              << has_size<std::vector<int>>::value << '\n';
-    std::cout << "has_size<int>              = "
-              << has_size<int>::value << '\n';
+    std::cout << "int:   " << scalar_to_json(42) << '\n';
+    std::cout << "str:   " << scalar_to_json(std::string{"ok"}) << '\n';
+    std::cout << "bool:  " << scalar_to_json(true) << '\n';
 
-    static_assert(has_size<std::vector<int>>::value);
-    static_assert(!has_size<int>::value);
+    std::cout << std::boolalpha
+              << "has_id<User>:  " << has_id<User>::value << '\n'
+              << "has_id<int>:   " << has_id<int>::value << '\n';
+
+    static_assert(has_id<User>::value);
+    static_assert(!has_id<std::string>::value);
 }
 
 }  // namespace

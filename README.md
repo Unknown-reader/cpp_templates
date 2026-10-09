@@ -40,7 +40,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | кольцевой буфер метрик, буфер чтения | ✅ |
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | структурные логи и заголовки ответа | ✅ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | репозиторий поверх разных контейнеров | ✅ |
-| 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | сериализация только подходящих типов | ⬜ |
+| 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | сериализация только подходящих типов | ✅ |
 | 09 | [Концепты](lessons/09_concepts.cpp) | требования к сущностям и репозиториям | ⬜ |
 | 10 | [CRTP и метапрограммирование](lessons/10_crtp_and_metaprogramming.cpp) | REST-контроллер и клиент БД с политиками | ⬜ |
 
@@ -129,5 +129,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: так пишут обобщённые репозитории и адаптеры, не привязанные к
 одной структуре данных.
+
+## Урок 8. Type traits, SFINAE и if constexpr
+
+Свойства типов проверяются на этапе компиляции.
+
+- `has_id<T>` (через `void_t`) — есть ли у сущности поле `id`.
+- `to_json` включена только для типов с `id` благодаря `std::enable_if_t`;
+  иначе SFINAE убирает перегрузку и компилятор прямо скажет о причине.
+- `scalar_to_json` выбирает формат ветками `if constexpr`.
+
+Ключевая мысль: SFINAE выбирает перегрузку, а `if constexpr` — ветку внутри
+одной функции.
 
 <!-- lesson-sections -->
