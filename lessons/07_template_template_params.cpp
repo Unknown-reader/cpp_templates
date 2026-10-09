@@ -1,46 +1,61 @@
-// Урок 7. Параметры-шаблоны (template template parameters).
+// Урок 7. Параметры-шаблоны в бэкенде.
 //
-// Иногда параметром шаблона должен быть сам контейнер-шаблон, а не готовый тип.
-// Тогда одну функцию можно применять к vector, deque, list и т.д.
+// Хранилище репозитория можно менять, не переписывая код: vector сохраняет
+// порядок вставки, deque удобен как очередь, а завтра добавится любая другая
+// коллекция. Параметром шаблона выступает сам контейнер-шаблон.
 
 #include <cstddef>
 #include <deque>
 #include <iostream>
-#include <list>
-#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "backend.hpp"
+
 namespace {
 
-// Container — это сам шаблон (например, std::vector), а T — тип элемента.
-template <template <typename, typename> class Container, typename T>
-Container<T, std::allocator<T>> make_filled(const T& value, std::size_t n) {
-    Container<T, std::allocator<T>> result;
-    for (std::size_t i = 0; i < n; ++i) result.push_back(value);
-    return result;
-}
+// Storage — контейнер-шаблон (vector, deque, ...), Entity — тип сущности.
+template <template <typename...> class Storage, typename Entity>
+class InMemoryRepository {
+public:
+    void add(const Entity& entity) { items_.push_back(entity); }
 
-// Принимаем любой контейнер: variadic-версия template template parameter.
-template <template <typename...> class Container, typename T>
-void dump(const Container<T>& c) {
-    for (const auto& v : c) std::cout << v << ' ';
-    std::cout << '\n';
-}
+    template <typename Predicate>
+    std::optional<Entity> find_if(Predicate predicate) const {
+        for (const auto& item : items_) {
+            if (predicate(item)) return item;
+        }
+        return std::nullopt;
+    }
+
+    std::size_t size() const { return items_.size(); }
+
+private:
+    Storage<Entity> items_;
+};
 
 void run() {
-    auto vec = make_filled<std::vector>(42, 4);
-    auto deq = make_filled<std::deque>(7, 3);
+    using backend::User;
 
-    std::cout << "vector: ";
-    dump(vec);
+    InMemoryRepository<std::vector, User> users;
+    users.add(User{1, "Алиса", "alice@example.com"});
+    users.add(User{2, "Боб", "bob@example.com"});
 
-    std::cout << "deque:  ";
-    dump(deq);
+    InMemoryRepository<std::deque, User> queue;
+    queue.add(User{3, "Кэрол", "carol@example.com"});
 
-    auto names = make_filled<std::vector>(std::string{"cpp"}, 2);
-    std::cout << "vector<string>: ";
-    dump(names);
+    if (auto user = users.find_if([](const User& u) { return u.id == 2; })) {
+        std::cout << "найден: " << user->name << '\n';
+    }
+
+    std::cout << "vector: " << users.size()
+              << ", deque: " << queue.size() << '\n';
+
+    std::cout << std::boolalpha
+              << "id=99 найден: "
+              << users.find_if([](const User& u) { return u.id == 99; }).has_value()
+              << '\n';
 }
 
 }  // namespace

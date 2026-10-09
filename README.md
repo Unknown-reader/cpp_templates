@@ -39,7 +39,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | JSON для списков и необязательных полей | ✅ |
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | кольцевой буфер метрик, буфер чтения | ✅ |
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | структурные логи и заголовки ответа | ✅ |
-| 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | репозиторий поверх разных контейнеров | ⬜ |
+| 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | репозиторий поверх разных контейнеров | ✅ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | сериализация только подходящих типов | ⬜ |
 | 09 | [Концепты](lessons/09_concepts.cpp) | требования к сущностям и репозиториям | ⬜ |
 | 10 | [CRTP и метапрограммирование](lessons/10_crtp_and_metaprogramming.cpp) | REST-контроллер и клиент БД с политиками | ⬜ |
@@ -118,5 +118,16 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: один вариадический шаблон заменяет семейство перегрузок под
 разное число аргументов.
+
+## Урок 7. Параметры-шаблоны
+
+Параметром шаблона может быть сам контейнер-шаблон.
+
+- `InMemoryRepository<Storage, Entity>` принимает `template <typename...> class`:
+  то же хранилище работает поверх `std::vector`, `std::deque` и других.
+- Метод `find_if(predicate)` не зависит от выбранного контейнера.
+
+Ключевая мысль: так пишут обобщённые репозитории и адаптеры, не привязанные к
+одной структуре данных.
 
 <!-- lesson-sections -->
