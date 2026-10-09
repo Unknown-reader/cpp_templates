@@ -36,7 +36,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 03 | [Полная специализация](lessons/03_full_specialization.cpp) | особое поведение для типа | ✅ |
 | 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | специализация по форме типа | ✅ |
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | значения в параметрах шаблона | ✅ |
-| 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | пакеты параметров, fold-выражения | ⬜ |
+| 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | пакеты параметров, fold-выражения | ✅ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | контейнер как параметр | ⬜ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | свойства типов, `if constexpr` | ⬜ |
 | 09 | [Концепты](lessons/09_concepts.cpp) | требования к типам в C++20 | ⬜ |
@@ -96,5 +96,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: значение-параметр — часть типа, поэтому `FixedArray<int, 3>` и
 `FixedArray<int, 5>` несовместимы.
+
+## Урок 6. Вариадические шаблоны
+
+Пакет параметров `typename... Args` принимает любое число аргументов.
+
+- `print(...)` — рекурсивное раскрытие пакета с базой `print()`.
+- `sum(...)` — fold-выражение `(args + ... + 0)`; на пустом пакете даёт `0`.
+- `all_same(...)` — fold по `&&` для проверки типов.
+- `sizeof...(Args)` — число элементов пакета.
+
+Ключевая мысль: рекурсия — классический способ раскрытия пакета, а
+fold-выражения делают то же самое короче (C++17).
 
 <!-- lesson-sections -->
