@@ -1,81 +1,115 @@
 // Урок 10. CRTP, policy-based design и вычисления на этапе компиляции.
 //
-// CRTP (Curiously Recurring Template Pattern) даёт статический полиморфизм без
-// виртуальных вызовов, policy-based design подставляет поведение параметром,
-// а рекурсия шаблонов считает значения прямо во время компиляции.
+// CRTP даёт общий REST-контроллер поверх разных хранилищ без виртуальных
+// вызовов, политики подставляют retry и логирование в клиент БД, а хеш маршрута
+// считается компилятором.
 
+#include <cstdint>
 #include <iostream>
+#include <optional>
 #include <string>
+#include <string_view>
+
+#include "backend.hpp"
 
 namespace {
 
-// --- CRTP: базовый класс знает точный тип наследника через параметр шаблона.
-template <typename Derived>
-class Shape {
+// --- CRTP: базовый контроллер знает точный тип наследника через параметр.
+template <typename Derived, typename Entity>
+class ResourceController {
 public:
-    std::string describe() const {
-        return "площадь = " + std::to_string(self().area());
+    backend::Request get(int id) const {
+        backend::Request request;
+        request.method = backend::Method::Get;
+        request.path =
+            "/" + std::string{Derived::route()} + "/" + std::to_string(id);
+        return request;
     }
 
-private:
-    const Derived& self() const { return static_cast<const Derived&>(*this); }
-};
-
-class Circle : public Shape<Circle> {
-public:
-    explicit Circle(double r) : radius_(r) {}
-    double area() const { return 3.141592653589793 * radius_ * radius_; }
-
-private:
-    double radius_;
-};
-
-class Square : public Shape<Square> {
-public:
-    explicit Square(double s) : side_(s) {}
-    double area() const { return side_ * side_; }
-
-private:
-    double side_;
-};
-
-// --- Policy-based design: поведение задаётся шаблонным параметром.
-struct FastTimeout { static int ms() { return 100; } };
-struct SlowTimeout { static int ms() { return 5000; } };
-
-template <typename TimeoutPolicy>
-class Client {
-public:
-    void call() const {
-        std::cout << "timeout = " << TimeoutPolicy::ms() << " ms\n";
+    std::optional<Entity> fetch(int id) const {
+        return static_cast<const Derived*>(this)->load(id);
     }
 };
 
-// --- Вычисления на этапе компиляции: факториал через рекурсию шаблонов.
-template <unsigned N>
-struct Factorial {
-    static constexpr unsigned long long value = N * Factorial<N - 1>::value;
+class UserController : public ResourceController<UserController, backend::User> {
+public:
+    static constexpr std::string_view route() { return "users"; }
+
+    std::optional<backend::User> load(int id) const {
+        if (id == 1) return backend::User{1, "Алиса", "alice@example.com"};
+        return std::nullopt;
+    }
 };
 
-template <>
-struct Factorial<0> {
-    static constexpr unsigned long long value = 1;
+// --- Policy-based design: поведение задаётся параметрами шаблона.
+struct NoRetry { static constexpr int attempts = 1; };
+struct RetryThreeTimes { static constexpr int attempts = 3; };
+
+struct NoLog {
+    static void log(std::string_view) {}
 };
+struct StdoutLog {
+    static void log(std::string_view message) {
+        std::cout << "[db] " << message << '\n';
+    }
+};
+
+template <typename RetryPolicy, typename LogPolicy>
+class DatabaseClient {
+public:
+    void connect(std::string_view dsn) const {
+        LogPolicy::log("connect " + std::string{dsn});
+        for (int attempt = 1; attempt <= RetryPolicy::attempts; ++attempt) {
+            LogPolicy::log("attempt " + std::to_string(attempt));
+        }
+    }
+
+    static constexpr int max_attempts() { return RetryPolicy::attempts; }
+};
+
+// --- Вычисления на этапе компиляции: FNV-1a хеш маршрута.
+constexpr std::uint32_t fnv1a(std::string_view text) {
+    std::uint32_t hash = 2166136261u;
+    for (char ch : text) {
+        hash ^= static_cast<std::uint32_t>(static_cast<unsigned char>(ch));
+        hash *= 16777619u;
+    }
+    return hash;
+}
+
+// Маршрут, узнающий себя по хешу пути без сравнения строк.
+template <std::uint32_t Hash>
+struct Route {
+    static constexpr std::uint32_t hash = Hash;
+    static constexpr bool matches(std::string_view path) { return fnv1a(path) == Hash; }
+};
+
+using UsersRoute = Route<fnv1a("/users")>;
+using HealthRoute = Route<fnv1a("/health")>;
 
 void run() {
-    Circle c{2.0};
-    Square s{3.0};
-    std::cout << "Circle: " << c.describe() << '\n';
-    std::cout << "Square: " << s.describe() << '\n';
+    UserController controller;
+    const backend::Request request = controller.get(1);
+    std::cout << backend::method_name(request.method) << " " << request.path << '\n';
 
-    Client<FastTimeout>{}.call();
-    Client<SlowTimeout>{}.call();
+    if (auto user = controller.fetch(1)) {
+        std::cout << "user: " << user->name << '\n';
+    }
 
-    std::cout << "Factorial<10> = " << Factorial<10>::value << '\n';
+    DatabaseClient<RetryThreeTimes, StdoutLog> client;
+    client.connect("postgres://localhost/app");
+    std::cout << "max attempts: " << client.max_attempts() << '\n';
 
-    static_assert(Factorial<0>::value == 1);
-    static_assert(Factorial<5>::value == 120);
-    static_assert(Factorial<10>::value == 3628800);
+    std::cout << std::boolalpha
+              << "GET /users -> users:  " << UsersRoute::matches("/users") << '\n'
+              << "GET /users -> health: " << UsersRoute::matches("/health") << '\n';
+
+    static_assert(DatabaseClient<RetryThreeTimes, NoLog>::max_attempts() == 3);
+    static_assert(DatabaseClient<NoRetry, NoLog>::max_attempts() == 1);
+    static_assert(UsersRoute::matches("/users"));
+    static_assert(!UsersRoute::matches("/health"));
+    static_assert(UsersRoute::hash == fnv1a("/users"));
+    static_assert(HealthRoute::hash != UsersRoute::hash);
 }
 
 }  // namespace

@@ -42,7 +42,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | репозиторий поверх разных контейнеров | ✅ |
 | 08 | [Type traits и SFINAE](lessons/08_type_traits_sfinae.cpp) | сериализация только подходящих типов | ✅ |
 | 09 | [Концепты](lessons/09_concepts.cpp) | требования к сущностям и репозиториям | ✅ |
-| 10 | [CRTP и метапрограммирование](lessons/10_crtp_and_metaprogramming.cpp) | REST-контроллер и клиент БД с политиками | ⬜ |
+| 10 | [CRTP и метапрограммирование](lessons/10_crtp_and_metaprogramming.cpp) | REST-контроллер и клиент БД с политиками | ✅ |
 
 ## Урок 1. Шаблоны функций
 
@@ -153,5 +153,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: концепты заменяют большую часть SFINAE-кода и делают сигнатуры
 читаемыми как документация.
+
+## Урок 10. CRTP и метапрограммирование
+
+- CRTP: `ResourceController<Derived, Entity>` строит REST-запрос и вызывает
+  `static_cast<Derived*>(this)->load(id)` статически, без виртуальных функций.
+- Policy-based design: `DatabaseClient<RetryPolicy, LogPolicy>` подставляет
+  стратегию повторных попыток и логирование.
+- Вычисления во время компиляции: `Route<fnv1a(path)>` узнаёт маршрут по хешу,
+  проверки закреплены в `static_assert`.
+
+Ключевая мысль: шаблоны позволяют переносить решения с этапа выполнения на этап
+компиляции — быстрее и безопаснее.
 
 <!-- lesson-sections -->
