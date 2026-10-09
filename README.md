@@ -36,7 +36,7 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 | 01 | [Шаблоны функций](lessons/01_function_templates.cpp) | пагинация, метрики, сборка ответа | ✅ |
 | 02 | [Шаблоны классов](lessons/02_class_templates.cpp) | `Result<T, E>`, кэш, репозиторий | ✅ |
 | 03 | [Полная специализация](lessons/03_full_specialization.cpp) | JSON-сериализация и имя HTTP-статуса | ✅ |
-| 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | JSON для списков и необязательных полей | ⬜ |
+| 04 | [Частичная специализация](lessons/04_partial_specialization.cpp) | JSON для списков и необязательных полей | ✅ |
 | 05 | [Нетиповые параметры](lessons/05_non_type_parameters.cpp) | кольцевой буфер метрик, буфер чтения | ⬜ |
 | 06 | [Вариадические шаблоны](lessons/06_variadic_templates.cpp) | структурные логи и заголовки ответа | ⬜ |
 | 07 | [Параметры-шаблоны](lessons/07_template_template_params.cpp) | репозиторий поверх разных контейнеров | ⬜ |
@@ -82,5 +82,17 @@ g++ -std=c++20 -Wall -Wextra -Wpedantic lessons/01_function_templates.cpp -o bui
 
 Ключевая мысль: компилятор сначала ищет точную специализацию и лишь потом
 берёт общий шаблон.
+
+## Урок 4. Частичная специализация
+
+Частичная специализация фиксирует не все аргументы, а их форму.
+
+- `JsonSerializer<std::vector<T>>` — любой список превращается в JSON-массив.
+- `JsonSerializer<std::optional<T>>` — необязательное поле или `null`.
+- Обе специализации рекурсивно вызывают `JsonSerializer<T>`, поэтому работают
+  вместе: `vector<optional<int>>` даёт `[1,null,3]`.
+
+Ключевая мысль: частичных специализаций может быть много, и компилятор выбирает
+наиболее подходящую.
 
 <!-- lesson-sections -->

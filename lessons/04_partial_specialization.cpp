@@ -1,56 +1,79 @@
-// Урок 4. Частичная специализация.
+// Урок 4. Частичная специализация в бэкенде.
 //
-// Полная специализация фиксирует все аргументы, а частичная — только их форму
-// (например, «указатель» или «массив»), оставляя тип элемента свободным.
+// В каждом API есть списки и необязательные поля. Частичная специализация
+// сериализует любой vector<T> и любой optional<T>, не зная заранее конкретный T,
+// и сама вызывает правильную специализацию для элемента.
 
 #include <cstddef>
 #include <iostream>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "backend.hpp"
 
 namespace {
 
+// Общий случай: реализацию задают специализации.
 template <typename T>
-struct ScalarTraits {
-    static constexpr bool is_pointer = false;
-    static constexpr bool is_array   = false;
-    static constexpr int  dimensions = 0;
+struct JsonSerializer;
+
+// Частичная специализация: любой список -> JSON-массив.
+template <typename T>
+struct JsonSerializer<std::vector<T>> {
+    static std::string serialize(const std::vector<T>& items) {
+        std::string out = "[";
+        for (std::size_t i = 0; i < items.size(); ++i) {
+            if (i != 0) out += ",";
+            out += JsonSerializer<T>::serialize(items[i]);
+        }
+        return out + "]";
+    }
 };
 
-// Частичная специализация для любого T*.
+// Частичная специализация: необязательное поле -> значение или null.
 template <typename T>
-struct ScalarTraits<T*> {
-    static constexpr bool is_pointer = true;
-    static constexpr bool is_array   = false;
-    static constexpr int  dimensions = 0;
+struct JsonSerializer<std::optional<T>> {
+    static std::string serialize(const std::optional<T>& value) {
+        return value ? JsonSerializer<T>::serialize(*value) : "null";
+    }
 };
 
-// Частичная специализация для любого массива T[N]; размерность рекурсивно
-// «снимает» вложенные массивы: int[3][4] -> 2 измерения.
-template <typename T, std::size_t N>
-struct ScalarTraits<T[N]> {
-    static constexpr bool is_pointer = false;
-    static constexpr bool is_array   = true;
-    static constexpr int  dimensions = 1 + ScalarTraits<T>::dimensions;
+// Специализации для конкретных типов, замыкающие рекурсию выше.
+template <>
+struct JsonSerializer<int> {
+    static std::string serialize(int value) { return std::to_string(value); }
+};
+
+template <>
+struct JsonSerializer<std::string> {
+    static std::string serialize(const std::string& value) {
+        return "\"" + value + "\"";
+    }
 };
 
 void run() {
-    using Int = ScalarTraits<int>;
-    using Ptr = ScalarTraits<int*>;
-    using Arr = ScalarTraits<int[3][4]>;
+    const std::vector<int> ids{1, 2, 3};
+    std::cout << "ids:   " << JsonSerializer<std::vector<int>>::serialize(ids) << '\n';
 
-    std::cout << std::boolalpha;
-    std::cout << "int       pointer=" << Int::is_pointer
-              << " array=" << Int::is_array
-              << " dims=" << Int::dimensions << '\n';
-    std::cout << "int*      pointer=" << Ptr::is_pointer
-              << " array=" << Ptr::is_array
-              << " dims=" << Ptr::dimensions << '\n';
-    std::cout << "int[3][4] pointer=" << Arr::is_pointer
-              << " array=" << Arr::is_array
-              << " dims=" << Arr::dimensions << '\n';
+    const std::vector<std::string> tags{"cpp", "backend"};
+    std::cout << "tags:  "
+              << JsonSerializer<std::vector<std::string>>::serialize(tags) << '\n';
 
-    static_assert(Int::is_pointer == false);
-    static_assert(Ptr::is_pointer == true);
-    static_assert(Arr::dimensions == 2);
+    const std::optional<std::string> nickname{"neo"};
+    const std::optional<std::string> empty;
+    std::cout << "nick:  "
+              << JsonSerializer<std::optional<std::string>>::serialize(nickname)
+              << '\n';
+    std::cout << "empty: "
+              << JsonSerializer<std::optional<std::string>>::serialize(empty)
+              << '\n';
+
+    // Комбинация обеих частичных специализаций: массив nullable-полей.
+    const std::vector<std::optional<int>> ratings{1, std::nullopt, 3};
+    std::cout << "mix:   "
+              << JsonSerializer<std::vector<std::optional<int>>>::serialize(ratings)
+              << '\n';
 }
 
 }  // namespace
